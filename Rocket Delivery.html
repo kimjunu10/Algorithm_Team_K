@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Rocket Delivery</title>
+    <!-- Kakao Maps JavaScript API를 사용하기 위한 스크립트 -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=24ff22eca760fa0f501774a07898fd10&libraries=services"></script>
+    <style>
+         /* 전체 페이지 스타일 */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+
+        /* 헤더 스타일 */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            border-radius: 16px;
+            width: calc(100% - 40px);
+            max-width: 1460px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* 로고 스타일 */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* 로켓 아이콘 스타일 */
+        .rocket-icon {
+            width: 50px;
+            height: 50px;
+            fill: white;
+        }
+
+        /* 제목 텍스트 스타일 */
+        h1 {
+            color: white;
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 컨테이너 스타일 */
+        .container {
+            display: grid;
+            grid-template-columns: 350px 700px 350px;
+            gap: 24px;
+            width: 100%;
+            max-width: 1460px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 패널 스타일 */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 제목 스타일 */
+        h3 {
+            color: #1a73e8;
+            margin: 0 0 8px 0;
+            font-size: 18px;
+        }
+
+        /* 입력 필드 스타일 */
+        input {
+            width: 100%;
+            height: 40px;
+            font-size: 15px;
+            padding: 8px 12px;
+            border: 2px solid #e1e4e8;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        /* 입력 필드 포커스 스타일 */
+        input:focus {
+            border-color: #1a73e8;
+            outline: none;
+        }
+
+        /* 버튼 스타일 */
+        button {
+            height: 40px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #1a73e8;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        /* 버튼 호버 스타일 */
+        button:hover {
+            background-color: #1557b0;
+        }
+
+        /* 지도 스타일 */
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 12px;
+            border: 2px solid #e1e4e8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* 검색 결과 스타일 */
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            padding: 8px;
+        }
+
+        /* 검색 결과 항목 스타일 */
+        .search-results div {
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        /* 검색 결과 항목 호버 스타일 */
+        .search-results div:hover {
+            background-color: #f1f3f5;
+        }
+
+        /* 선택된 위치 스타일 */
+        .location div {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e1e4e8;
+        }
+
+        /* 삭제 버튼 스타일 */
+        .location button {
+            background-color: #dc3545;
+            padding: 4px 12px;
+            height: 32px;
+            font-size: 13px;
+        }
+
+        /* 삭제 버튼 호버 스타일 */
+        .location button:hover {
+            background-color: #c82333;
+        }
+
+        /* 경로 정보 스타일 */
+        #route-info {
+            width: 100%;
+            max-width: 1460px;
+            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 24px;
+        }
+
+        /* 경로 상세 정보 스타일 */
+        #route-details {
+            line-height: 1.6;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <!-- 페이지의 상단 헤더 영역 -->
+    <div class="header">
+        <div class="logo">
+            <!-- 로켓 아이콘 -->
+            <svg class="rocket-icon" viewBox="0 0 24 24">
+                <path d="M12 2.5c0 0-8 2.2-8 11.5 0 3.3 1.3 5 2.5 6.5h11c1.2-1.5 2.5-3.2 2.5-6.5 0-9.3-8-11.5-8-11.5zm0 18c-1.1 0-2-0.9-2-2s0.9-2 2-2 2 0.9 2 2-0.9 2-2 2zm1-9.5c0 0.8-0.7 1.5-1.5 1.5s-1.5-0.7-1.5-1.5 0.7-1.5 1.5-1.5 1.5 0.7 1.5 1.5z"/>
+            </svg>
+            <!-- 헤더 제목 -->
+            <h1>Rocket Delivery</h1>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <div class="container">
+        <!-- 출발지 입력 및 검색 패널 -->
+        <div class="side-panel">
+            <h3>출발지</h3>
+            <input type="text" id="start-search-input" placeholder="출발지 검색">
+            <button onclick="searchPlace('start')">검색</button>
+            <div id="start-search-results" class="search-results"></div>
+            <div id="start-location" class="location">선택된 출발지 없음</div>
+        </div>
+
+        <!-- 지도 영역 -->
+        <div id="map"></div>
+
+        <!-- 목적지 입력 및 검색 패널 -->
+        <div class="side-panel">
+            <h3>목적지</h3>
+            <input type="text" id="end-search-input" placeholder="목적지 검색">
+            <button onclick="searchPlace('end')">검색</button>
+            <div id="end-search-results" class="search-results"></div>
+            <div id="end-locations" class="location">선택된 목적지 없음</div>
+        </div>
+    </div>
+    
+    <!-- 경로 계산 및 초기화 버튼 영역 -->
+    <div class="button-container">
+        <button onclick="calculateRoute()">최적 경로 계산</button>
+        <button onclick="displaySegmentDistances()">거리 계산</button>
+        <button onclick="displaySegmentTimes()">시간 계산</button>
+        <button onclick="resetAll()">초기화</button>
+    </div>
+
+    <!-- 경로 정보 표시 영역 -->
+    <div id="route-info">
+        <div id="route"></div>
+        <div id="route-distances"></div> <!-- 거리 계산 결과를 표시할 영역 -->
+        <div id="route-times"></div> <!-- 시간 계산 결과를 표시할 영역 -->
+    </div>
+
+<script>
+    // 전역 변수 선언
+    let map, polyline, markers = []; // 지도 객체, 폴리라인 객체, 마커 배열을 위한 변수 선언
+    const locations = { start: null, destinations: [] }; // 출발지와 목적지 정보 저장을 위한 객체
+    let calculatedData = {}; // 최적 경로 및 계산 결과 저장을 위한 객체
+
+    // 최적 경로를 계산하는 함수
+    function calculateRoute() {
+        // 출발지나 목적지가 설정되지 않았을 경우 사용자에게 알림
+        if (!locations.start || locations.destinations.length === 0) {
+            alert("출발지와 최소 1개의 목적지를 설정해주세요.");
+            return; // 출발지와 목적지가 설정되지 않았으므로 함수 종료
+        }
+
+        // 서버로 출발지와 목적지 데이터를 POST 요청
+        fetch("http://localhost:5000/calculate", {
+            method: "POST", // POST 요청
+            headers: { "Content-Type": "application/json" }, // JSON 형식의 데이터 전송
+            body: JSON.stringify(locations), // 출발지와 목적지 정보를 JSON 형식으로 변환하여 요청 본문에 포함  
+        })
+            .then(response => response.json()) // 서버 응답을 JSON 형식으로 파싱
+            .then(result => {
+                // 성공적으로 최적 경로를 계산한 경우
+                if (result.status === "success") {
+                    // 최적 경로 및 관련 데이터를 저장
+                    calculatedData = {
+                        path: result.path, // 최적 경로 지점 목록
+                        segmentDistances: result.segment_distances, // 구간별 거리 정보
+                        segmentTimes: result.segment_times, // 구간별 시간 정보
+                        totalDistance: result.total_distance, // 총 이동 거리
+                        totalWeight: result.total_weight, // 총 가중치
+                        route: result.route, // 지도에 표시할 최적 경로 좌표 리스트
+                    };
+
+                    // 경로 정보를 HTML에 업데이트
+                    const routeDetails = document.getElementById('route');
+                    const pathNames = result.path.map(loc => loc.name); // 경로상의 각 지점 이름 추출
+                    routeDetails.innerHTML = `
+                        <h3>최적경로 계산</h3>
+                        <div><strong>경로:</strong> ${pathNames.join(" -> ")}</div>
+                    `;
+
+                    // 지도에 경로를 그리기
+                    drawRoute(result.route);
+                } else {
+                    // 경로 계산 실패 시 오류 메시지 출력
+                    alert("경로 계산 오류: " + result.message);
+                }
+            })
+            .catch(error => {
+                // 서버와의 통신 중 오류 발생 시 처리
+                console.error("Error:", error);
+                alert("서버와의 통신 중 오류가 발생했습니다.");
+            });
+    }
+
+    // 구간별 거리를 HTML에 표시하는 함수
+    function displaySegmentDistances() {
+        if (!calculatedData.segmentDistances) { // 최적 경로 데이터가 없으면 경고
+            alert("최적경로 계산을 먼저 수행해주세요.");
+            return;
+        }
+
+        // 각 구간의 거리 정보를 HTML 형식으로 변환하여 화면에 표시
+        const segmentDistances = calculatedData.segmentDistances.map((segment, idx) => {
+            return `구간 ${idx + 1}: ${segment.start} -> ${segment.end}: ${segment.distance_km.toFixed(2)} km`;
+        });
+
+        const totalDistance = calculatedData.totalDistance.toFixed(2); // 총 이동 거리
+        const totalWeight = calculatedData.totalWeight.toFixed(2); // 총 가중치
+
+        // HTML에 거리 정보 업데이트
+        const routeDistances = document.getElementById('route-distances');
+        routeDistances.innerHTML = `
+            <h3>구간별 거리</h3>
+            <div>${segmentDistances.join("<br>")}</div>
+            <h3>총 이동거리</h3>
+            <div>${totalDistance} km</div>
+            <h3>총 가중치</h3>
+            <div>${totalWeight}</div>
+        `;
+    }
+
+    // 구간별 시간을 HTML에 표시하는 함수
+    function displaySegmentTimes() {
+        if (!calculatedData.segmentTimes || !calculatedData.segmentDistances) { // 데이터가 없는 경우 경고
+            alert("최적경로 계산을 먼저 수행해주세요.");
+            return;
+        }
+
+        // 각 구간의 시간 정보를 HTML 형식으로 변환하여 화면에 표시
+        const segmentDetails = calculatedData.segmentDistances.map((segment, idx) => {
+            const time = calculatedData.segmentTimes[idx]; // 각 구간의 시간 정보
+            return `구간 ${idx + 1}: ${segment.start} -> ${segment.end} : ${time}`;
+        });
+
+        // HTML에 시간 정보 업데이트
+        const routeTimes = document.getElementById('route-times');
+        routeTimes.innerHTML = `
+            <h3>구간별 시간</h3>
+            <div>${segmentDetails.join("<br>")}</div>
+        `;
+    }
+
+    // 모든 데이터를 초기화하는 함수
+    function resetAll() {
+        // 저장된 데이터를 초기화
+        calculatedData = {};
+        locations.start = null;
+        locations.destinations = [];
+
+        // 입력 필드 및 검색 결과 초기화
+        document.getElementById('start-search-input').value = '';
+        document.getElementById('end-search-input').value = '';
+        document.getElementById('start-search-results').innerHTML = '';
+        document.getElementById('end-search-results').innerHTML = '';
+
+        // 출발지 및 목적지 영역 초기화
+        updateStartLocation();
+        updateEndLocations();
+
+        // 지도에서 마커 및 경로 제거
+        removeMarkers();
+        if (polyline) {
+            polyline.setMap(null); // 지도에서 폴리라인 삭제
+            polyline = null;
+        }
+
+        // 경로 정보 초기화
+        document.getElementById('route').innerHTML = '';
+        document.getElementById('route-distances').innerHTML = '';
+        document.getElementById('route-times').innerHTML = '';
+
+        // 지도 중심 및 줌 레벨 기본값으로 복원
+        map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780)); // 서울 중심 좌표로 지도 이동
+        map.setLevel(3); // 줌 레벨 설정
+    }
+
+    // 지도 초기화 함수
+    function initMap() {
+        const container = document.getElementById('map'); // 지도 컨테이너 선택
+        const options = { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 3 }; // 중심 좌표와 줌 레벨 설정
+        map = new kakao.maps.Map(container, options); // 카카오 지도 객체 생성
+    }
+
+    // 지도에 마커 추가하는 함수
+    function addMarker(location) {
+        const markerPosition = new kakao.maps.LatLng(location.lat, location.lng); // 마커 위치 설정
+        const marker = new kakao.maps.Marker({ position: markerPosition }); // 마커 객체 생성
+        marker.setMap(map); // 지도에 마커 추가
+
+        // 마커에 표시할 정보창 생성
+        const infowindow = new kakao.maps.InfoWindow({
+            content: `<div style="padding:5px;z-index:1;">${location.name}</div>`,
+        });
+        infowindow.open(map, marker); // 정보창 열기
+
+        // 마커와 정보창을 배열에 저장
+        markers.push({ marker, infowindow });
+    }
+
+    // 지도에서 모든 마커 삭제하는 함수
+    function removeMarkers() {
+        markers.forEach(({ marker, infowindow }) => {
+            marker.setMap(null); // 지도에서 마커 제거
+            infowindow.close();  // 정보창 닫기
+        });
+        markers = []; // 마커 배열 초기화
+    }
+
+    // 지도에 표시된 마커 새로고침하는 함수
+    function refreshMarkers() {
+        removeMarkers(); // 기존 마커 제거
+        if (locations.start) addMarker(locations.start); // 출발지 마커 추가
+        locations.destinations.forEach(dest => addMarker(dest)); // 목적지 마커 추가
+    }
+
+    // 출발지 정보를 갱신하여 화면에 업데이트하는 함수
+    function updateStartLocation() {
+        const container = document.getElementById('start-location'); // 출발지 표시 영역 선택
+        if (locations.start) {
+            // 출발지가 설정되어 있을 경우 출발지 정보를 표시
+            container.innerHTML = `
+                <div>
+                    <span>출발지: ${locations.start.name}</span>
+                    <button onclick="removeStartLocation()">삭제</button>
+                </div>
+            `;
+        } else {
+            // 출발지가 설정되지 않은 경우 기본 메시지 표시
+            container.innerHTML = '선택된 출발지 없음';
+        }
+    }
+
+    // 목적지 정보를 갱신하여 화면에 업데이트하는 함수
+    function updateEndLocations() {
+        const container = document.getElementById('end-locations'); // 목적지 표시 영역 선택
+        if (locations.destinations.length > 0) {
+            // 목적지가 존재할 경우, 각 목적지 정보를 반복하여 표시
+            container.innerHTML = locations.destinations.map((loc, idx) => `
+                <div>
+                    <span>목적지 ${idx + 1}: ${loc.name}</span>
+                    <button onclick="removeEndLocation(${idx})">삭제</button>
+                </div>
+            `).join(''); // 각 목적지 HTML을 합쳐서 표시
+        } else {
+            // 목적지가 없는 경우 기본 메시지 표시
+            container.innerHTML = '선택된 목적지 없음';
+        }
+    }
+
+    // 출발지를 삭제하는 함수
+    function removeStartLocation() {
+        locations.start = null; // 출발지 데이터를 null로 초기화
+        updateStartLocation(); // 화면에 반영
+        refreshMarkers(); // 지도에서 마커 업데이트
+    }
+
+    // 특정 목적지를 삭제하는 함수
+    function removeEndLocation(index) {
+        locations.destinations.splice(index, 1); // 해당 인덱스의 목적지를 제거
+        updateEndLocations(); // 화면에 반영
+        refreshMarkers(); // 지도에서 마커 업데이트
+    }
+
+    // 특정 장소를 검색하는 함수
+    function searchPlace(type) {
+        const inputId = type === 'start' ? 'start-search-input' : 'end-search-input'; // 출발지 또는 목적지 입력 필드 ID
+        const resultId = type === 'start' ? 'start-search-results' : 'end-search-results'; // 검색 결과 표시 영역 ID
+        const keyword = document.getElementById(inputId).value.trim(); // 검색어 가져오기
+        const container = document.getElementById(resultId); // 검색 결과 표시 영역 선택
+
+        if (!keyword) {
+            // 검색어가 없을 경우 사용자에게 경고 메시지
+            alert("검색어를 입력해주세요.");
+            return;
+        }
+
+        const places = new kakao.maps.services.Places(); // 카카오 지도 API의 장소 검색 객체 생성
+        places.keywordSearch(keyword, (result, status) => {
+            container.innerHTML = ''; // 검색 결과 초기화
+
+            if (status === kakao.maps.services.Status.OK) {
+                // 검색 성공 시, 결과를 반복하여 화면에 표시
+                result.forEach(place => {
+                    const item = document.createElement('div'); // 새로운 div 요소 생성
+                    item.textContent = `${place.place_name} (${place.address_name})`; // 장소 이름 및 주소 설정
+                    item.style.cursor = 'pointer'; 
+                    item.style.padding = '5px'; 
+                    item.style.borderBottom = '1px solid #eee'; 
+                    item.onmouseover = () => item.style.backgroundColor = '#f0f0f0'; // 마우스 오버 시 배경색 변경
+                    item.onmouseout = () => item.style.backgroundColor = 'transparent'; // 마우스 아웃 시 배경색 초기화
+                    item.onclick = () => selectLocation(place, type); // 클릭 시 장소 선택
+                    container.appendChild(item); // 검색 결과 영역에 추가
+                });
+            } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
+                // 검색 결과가 없는 경우 메시지 표시
+                container.innerHTML = '<div style="padding: 5px;">검색 결과가 없습니다.</div>';
+            } else {
+                // 검색 중 오류가 발생한 경우 메시지 표시
+                container.innerHTML = '<div style="padding: 5px;">검색 중 오류가 발생했습니다.</div>';
+            }
+        });
+    }
+
+    // 검색된 장소를 선택하여 출발지 또는 목적지로 설정하는 함수
+    function selectLocation(place, type) {
+        const location = {
+            name: place.place_name, // 장소 이름
+            lat: parseFloat(place.y), // 위도
+            lng: parseFloat(place.x), // 경도
+        };
+
+        if (type === 'start') {
+            // 출발지를 설정
+            locations.start = location;
+            updateStartLocation(); // 화면에 반영
+        } else {
+            // 목적지를 목록에 추가
+            locations.destinations.push(location);
+            updateEndLocations(); // 화면에 반영
+        }
+
+        refreshMarkers(); // 지도에서 마커 새로고침
+        map.setCenter(new kakao.maps.LatLng(location.lat, location.lng)); // 선택된 장소를 중심으로 지도 이동
+    }
+
+    // 지도에 경로를 그리는 함수
+    function drawRoute(route) {
+        if (polyline) polyline.setMap(null); // 기존 폴리라인이 있을 경우 지도에서 제거
+
+        const linePath = route.map(vertex => new kakao.maps.LatLng(vertex.lat, vertex.lng)); // 경로 좌표를 LatLng 객체로 변환
+
+        // 새로운 폴리라인 생성
+        polyline = new kakao.maps.Polyline({
+            path: linePath, // 경로 설정
+            strokeWeight: 5, 
+            strokeColor: '#FF0000', 
+            strokeOpacity: 0.7, 
+        });
+        polyline.setMap(map); // 폴리라인을 지도에 표시
+
+        const bounds = new kakao.maps.LatLngBounds(); // 지도의 영역을 설정하기 위한 객체 생성
+        linePath.forEach(point => bounds.extend(point)); // 각 경로의 포인트를 포함하도록 영역 확장
+        map.setBounds(bounds); // 확장된 영역을 지도에 반영
+    }
+
+    // 지도 초기화를 호출하여 초기 상태 설정
+    initMap();
+</script>
+
+</body>
+</html>
+    
